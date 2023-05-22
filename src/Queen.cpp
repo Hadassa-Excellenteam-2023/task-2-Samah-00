@@ -1,6 +1,6 @@
 #include "Queen.h"
 
-std::pair<Code, bool> Queen::isLegalMove(char to_row, int to_col, const std::vector<std::vector<Piece*>>& board) const {
+std::pair<Code, bool> Queen::isLegalMove(char to_row, size_t to_col, const std::vector<std::vector<Piece*>>& board) const {
 
     // Check the source and the destination tiles
     auto source_tile_check = checkSourceAndDest(to_row, to_col, board);
@@ -19,10 +19,10 @@ std::pair<Code, bool> Queen::isLegalMove(char to_row, int to_col, const std::vec
     }
 
     // The move is legal
-    return std::make_pair(Code::CODE_42, true);
+    return std::make_pair(Code::LEGAL_MOVE, true);
 }
 
-void Queen::updatePos(const char to_row, const int to_col) {
+void Queen::updatePos(const char to_row, const size_t to_col) {
     setRow(to_row);
     setCol(to_col);
 }
@@ -30,27 +30,27 @@ void Queen::updatePos(const char to_row, const int to_col) {
 std::pair<Code, bool> Queen::checkRookMove(char to_row, int to_col, const std::vector<std::vector<Piece*>>& board) const {
     // Check if the movement is horizontal or vertical
     if (to_row != getRow() && to_col != getCol()) {
-        return std::make_pair(Code::CODE_21, false);
+        return std::make_pair(Code::ILLEGAL_MOVE, false);
     }
 
     // Check if there are any pieces blocking the path to the destination
     if (isBlockedPath(to_row, to_col, board))
-        return std::make_pair(Code::CODE_21, false);
+        return std::make_pair(Code::ILLEGAL_MOVE, false);
 
-    return std::make_pair(Code::CODE_42, true); // legal move
+    return std::make_pair(Code::LEGAL_MOVE, true); // legal move
 }
 
 std::pair<Code, bool> Queen::checkBishopMove(char to_row, int to_col, const std::vector<std::vector<Piece*>>& board) const {
     // Check if the movement is legal for a bishop
-    if (std::abs(m_row - to_row) != std::abs(m_col - to_col)) {
-        return std::make_pair(Code::CODE_21, false);
+    if (std::abs(m_row - to_row) != std::abs(int(m_col - to_col))) {
+        return std::make_pair(Code::ILLEGAL_MOVE, false);
     }
 
     // Check if there are any pieces blocking the path to the destination
     if (isBlockedPath(to_row, to_col, board))
-        return std::make_pair(Code::CODE_21, false);
+        return std::make_pair(Code::ILLEGAL_MOVE, false);
 
-    return std::make_pair(Code::CODE_42, true); // legal move
+    return std::make_pair(Code::LEGAL_MOVE, true); // legal move
 }
 
 bool Queen::isBlockedPath(char to_row, int to_col, const std::vector<std::vector<Piece*>>& board) const {

@@ -20,6 +20,5 @@ private:
     bool m_gameOver;
     bool m_player1Turn;
 
-    void initialize();
     void switchTurn();
 };

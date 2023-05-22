@@ -56,15 +56,7 @@ void Board::initialize() {
 
 // Return a vector of pointers to all the pieces on the board with the given color
 std::vector<Piece*> Board::getPieces(Piece::Color color) const {
-    std::vector<Piece*> pieces;
-    for (const auto& row : m_board) {
-        for (const auto& piece : row) {
-            if (piece && piece->getColor() == color) {
-                pieces.push_back(piece);
-            }
-        }
-    }
-    return pieces;
+    return (color == Piece::Color::WHITE) ? m_white_pieces : m_black_pieces;
 }
 
 void Board::movePiece(const char from_row, const int from_col, const char to_row, const int to_col) {
@@ -82,16 +74,40 @@ std::vector<std::vector<Piece*>> Board::getPieces() const {
 }
 
 bool Board::isKingInCheck(Piece::Color color, char from_row, int from_col, char to_row, int to_col) const {
-    // Create a copy of m_board called board_after_move
-    auto board_after_move = m_board;
+    std::pair<char, int> KingTile = GetKingLocation(color);
 
-    // Move the piece from [from_row][from_col] to [to_row][to_col] in board_after_move
-    board_after_move[to_row - 'a'][to_col - 1] = board_after_move[from_row - 'a'][from_col - 1];
-    board_after_move[from_row - 'a'][from_col - 1] = nullptr;
+    if (KingTile.first != NULL) {
 
-    // Find the position of the king of the given color
-    char kingRow;
-    int kingCol;
+        // Create a copy of m_board called board_after_move
+        auto board_after_move = m_board;
+
+        // Move the piece from [from_row][from_col] to [to_row][to_col] in board_after_move
+        board_after_move[to_row - 'a'][to_col - 1] = board_after_move[from_row - 'a'][from_col - 1];
+        board_after_move[from_row - 'a'][from_col - 1] = nullptr;
+
+        // Check if any piece of the opposing color can capture the king
+        std::vector<Piece*> attackers = getAttackers(KingTile.first, KingTile.second,
+            color == Piece::Color::WHITE ? m_black_pieces : m_white_pieces);
+        if (attackers.empty()) {
+            return false;
+        }
+
+        for (const auto& piece : attackers) {
+            const auto& [code, isLegal] = piece->isLegalMove(KingTile.first, KingTile.second, m_board);
+            const auto& [codeAfter, isLegalAfter] = piece->isLegalMove(KingTile.first, KingTile.second, board_after_move);
+            if (isLegalAfter && !isLegal) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+// Find the position of the king of the given color
+std::pair<char, int> Board::GetKingLocation(Piece::Color color) const{
+    char kingRow = NULL;
+    int kingCol = NULL;
     for (const auto& row : m_board) {
         for (const auto& piece : row) {
             if (piece != nullptr && piece->getColor() == color && typeid(*piece) == typeid(King)) {
@@ -101,107 +117,21 @@ bool Board::isKingInCheck(Piece::Color color, char from_row, int from_col, char 
             }
         }
     }
-
-    // Check if any piece of the opposing color can capture the king
-    const auto& opposingPieces = (color == Piece::Color::WHITE) ? m_black_pieces : m_white_pieces;
-    for (const auto& piece : opposingPieces) {
-        const auto& [code, isLegal] = piece->isLegalMove(kingRow, kingCol, m_board);
-        const auto& [code2, isLegal2] = piece->isLegalMove(kingRow, kingCol, board_after_move);
-        if (isLegal2 && !isLegal) {
-            return true;
-        }
-    }
-
-    // If no opposing piece can capture the king, the king is not in check
-    return false;
+    return std::make_pair(kingRow, kingCol);
 }
 
+bool Board::isCheckmate(Piece::Color color, char to_row, size_t to_col) const {
+    std::pair<char, int> opposingKingTile = GetKingLocation(color);
 
-
-bool Board::isCheckmate(Piece::Color color) const {
-    // Find the king of the given color
-    King* king = nullptr;
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        for (int j = 0; j < BOARD_SIZE; j++) {
-            if (m_board[i][j] != nullptr && m_board[i][j]->getColor() == color &&
-                dynamic_cast<King*>(m_board[i][j]) != nullptr) {
-                king = dynamic_cast<King*>(m_board[i][j]);
-                break;
-            }
-        }
-        if (king != nullptr) {
-            break;
-        }
-    }
-
-    // Check if the king is in check
-    std::vector<Piece*> attackers = getAttackers(king->getRow(), king->getCol(),
-        king->getColor() == Piece::Color::WHITE ?
-        m_black_pieces : m_white_pieces);
-    if (attackers.empty()) {
-        return false;
-    }
-
-    // Check if the king can move out of check
-    for (int i = king->getRow() - 1; i <= king->getRow() + 1; i++) {
-        for (int j = king->getCol() - 1; j <= king->getCol() + 1; j++) {
-            if (i >= 'a' && i <= 'h' && j >= 1 && j <= 8) {
-                auto result = king->isLegalMove(i, j, m_board);
-                if (result.first == Code::CODE_42) {
-                    // The king can move out of check
-                    return false;
-                }
-            }
-        }
-    }
-
-    // Check if any friendly piece can block the attack
-    if (attackers.size() == 1) {
-        Piece* attacker = attackers[0];
-        int row_diff = attacker->getRow() - king->getRow();
-        int col_diff = attacker->getCol() - king->getCol();
-        int row_dir = row_diff > 0 ? 1 : -1;
-        int col_dir = col_diff > 0 ? 1 : -1;
-        char row = king->getRow() + row_dir;
-        int col = king->getCol() + col_dir;
-        while (row >= 'a' && row <= 'h' && col >= 1 && col <= 8) {
-            for (const auto& piece : color == Piece::Color::WHITE ? m_white_pieces : m_black_pieces) {
-                if (piece != king && piece->getRow() == row && piece->getCol() == col) {
-                    auto result = piece->isLegalMove(attacker->getRow(), attacker->getCol(), m_board);
-                    if (result.first == Code::CODE_42) {
-                        // The attack can be blocked
-                        return false;
-                    }
-                }
-            }
-            row += row_dir;
-            col += col_dir;
-        }
-    }
-
-    // Check if any friendly piece can capture the attacking piece
-    for (const auto& piece : color == Piece::Color::WHITE ? m_white_pieces : m_black_pieces) {
-        if (piece != king) {
-            for (const auto& attacker : attackers) {
-                auto result = piece->isLegalMove(attacker->getRow(), attacker->getCol(), m_board);
-                if (result.first == Code::CODE_42) {
-                    // The attacking piece can be captured
-                    return false;
-                }
-            }
-        }
-    }
-
-    // The king is in checkmate
-    return true;
+    return (opposingKingTile.first == to_row && opposingKingTile.second == to_col);
 }
 
 std::vector<Piece*> Board::getAttackers(char row, int col, std::vector<Piece*> pieces) const {
     std::vector<Piece*> attackers;
     for (const auto& piece : pieces) {
         auto result = piece->isLegalMove(row, col, m_board);
-        if (result.first == Code::CODE_42) {
-            // The piece can attack the given row and column
+        if (result.first == Code::LEGAL_MOVE) {
+            // The piece can attack the tile of the king
             attackers.push_back(piece);
         }
     }

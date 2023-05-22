@@ -54,13 +54,13 @@ std::pair<Code, bool> Player::makeMove(char from_row, int from_col, char to_row,
     // Check that the move is within the board boundaries
     if (to_row < 'a' || to_row > 'h' || to_col < 1 || to_col > 8 ||
         from_row < 'a' || from_row > 'h' || from_col < 1 || from_col > 8) {
-        return std::make_pair(Code::CODE_21, false);
+        return std::make_pair(Code::ILLEGAL_MOVE, false);
     }
 
 
     // Handle the case where there is no piece at the specified position
     if (board[from_row - 'a'][from_col - 1] == nullptr)
-        return std::make_pair<Code, bool>(Code::CODE_11, false);
+        return std::make_pair<Code, bool>(Code::EMPTY_TILE, false);
 
     // Find the piece to move
     Piece* piece = nullptr;
@@ -78,7 +78,7 @@ std::pair<Code, bool> Player::makeMove(char from_row, int from_col, char to_row,
     if (!piece) {
         // piece is still pointing to nullptr but there's a piece on the board
         // which means that the piece in the source square belongs to the opposing player
-        return std::make_pair<Code, bool>(Code::CODE_12, false);
+        return std::make_pair<Code, bool>(Code::ENEMY_PIECE_IN_SOURCE, false);
     }
 
     // Check if the move is legal for the selected piece and return the result

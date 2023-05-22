@@ -1,7 +1,7 @@
 
 #include "King.h"
 
-std::pair<Code, bool> King::isLegalMove(char to_row, int to_col, const std::vector<std::vector<Piece*>>& board) const {
+std::pair<Code, bool> King::isLegalMove(char to_row, size_t to_col, const std::vector<std::vector<Piece*>>& board) const {
 
     // Check the source and the destination tiles
     auto source_tile_check = checkSourceAndDest(to_row, to_col, board);
@@ -13,7 +13,7 @@ std::pair<Code, bool> King::isLegalMove(char to_row, int to_col, const std::vect
     int row_diff = to_row - getRow();
     int col_diff = to_col - getCol();
     if (!((row_diff == 1 && col_diff == 0) || (row_diff == 0 && col_diff == 1) || (row_diff == 1 && col_diff == 1))) {
-        return std::make_pair(Code::CODE_21, false);
+        return std::make_pair(Code::ILLEGAL_MOVE, false);
     }
 
     /*
@@ -42,12 +42,12 @@ std::pair<Code, bool> King::isLegalMove(char to_row, int to_col, const std::vect
     */
 
     // Otherwise, it's a legal move
-    return std::make_pair(Code::CODE_42, true);
+    return std::make_pair(Code::LEGAL_MOVE, true);
     
 }
 
 
-void King::updatePos(const char to_row, const int to_col) {
+void King::updatePos(const char to_row, const size_t to_col) {
     // Update the piece's position
     setRow(std::tolower(to_row));
     setCol(to_col);
