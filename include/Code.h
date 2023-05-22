@@ -1,0 +1,16 @@
+#ifndef CODE_H
+#define CODE_H
+
+enum class Code {
+	CODE_ZERO = 0,
+	EMPTY_TILE = 11,
+	ENEMY_PIECE_IN_SOURCE = 12,
+	SELF_PIECE_IN_TARGET = 13,
+	ILLEGAL_MOVE = 21,
+	SELF_CHECK = 31,
+	CHECK = 41,
+	LEGAL_MOVE = 42,
+	CHECKMATE = 43
+};
+
+#endif // CODE_H
